@@ -1,72 +1,134 @@
 # Katana Motion 🥷
 
-Jogo de corte de frutas controlado pela webcam ou pelo mouse, criado com React, TypeScript, Canvas e MediaPipe Hand Landmarker.
+### Sua mão é a lâmina. Corte, combine e sobreviva.
 
-**Sua mão é a lâmina.** Use a ponta do indicador para cortar frutas, encadear combos e evitar bombas. O jogo suporta até duas mãos simultaneamente.
+**Katana Motion** é um jogo interativo de corte de frutas desenvolvido para navegadores, com controle por **webcam e visão computacional**, além de uma alternativa por **mouse**. Os movimentos da ponta do dedo indicador são convertidos em golpes, permitindo jogar com **as duas mãos simultaneamente**.
 
-## Como rodar
+**Projeto de portfólio de [Hiago Martins](https://github.com/Mart1nsHiago)** · [Meu portfólio](https://mart1nshiago.github.io/) · [Direitos autorais e uso](COPYRIGHT.md)
 
-Requisitos: Node.js 22+ e um navegador moderno (Chrome ou Edge recomendados).
+`React` · `TypeScript` · `Vite` · `MediaPipe` · `Canvas 2D` · `WebAssembly`
+
+---
+
+## Sobre o projeto
+
+O objetivo foi combinar interfaces web, reconhecimento de mãos em tempo real e lógica de jogos em uma experiência que funciona diretamente no navegador, **sem backend**.
+
+### Funcionalidades
+
+- **Controle por webcam:** reconhecimento e rastreamento de até **duas mãos** com MediaPipe Hand Landmarker.
+- **Cortes com os dedos:** movimentação rápida da ponta do indicador como trajetória da lâmina.
+- **Modo mouse:** clique e arraste para jogar sem webcam.
+- **Mecânicas de jogo:** frutas, bombas, recuperação de vidas, pontuação, combos e efeitos visuais.
+- **Dois modos:** partida livre e desafio diário com sequência reproduzível.
+- **Histórico e ranking locais:** partidas, recordes, precisão e evolução da pontuação.
+- **Configurações:** espelhamento, visualização dos pontos das mãos, rastros, som e redução de efeitos.
+- **Interface responsiva:** adaptação para diferentes tamanhos de tela.
+
+## Como funciona tecnicamente
+
+O jogo possui três partes principais:
+
+| Camada | Responsabilidade | Arquivos |
+| --- | --- | --- |
+| **Interface** | Telas, HUD, modos, configurações, ranking e estatísticas | `src/App.tsx`, `src/styles.css` |
+| **Rastreamento e renderização** | Acesso à câmera, MediaPipe, coordenadas das mãos e desenho no Canvas | `src/components/GameArena.tsx` |
+| **Motor do jogo** | Física, trajetórias, colisões, pontuação, efeitos e dificuldade | `src/game/engine.ts`, `src/game/math.ts`, `src/game/types.ts` |
+
+### Fluxo de controle por webcam
+
+1. O navegador solicita permissão para acessar a câmera usando `getUserMedia`.
+2. O **MediaPipe Hand Landmarker** analisa os quadros do vídeo localmente.
+3. A posição do **indicador** de cada mão detectada é transformada em coordenadas da área do jogo, considerando espelhamento e enquadramento.
+4. Os deslocamentos entre posições formam trajetórias de corte.
+5. O motor calcula a interseção das trajetórias com os objetos em movimento e atualiza vidas, pontos e combos.
+6. O **Canvas 2D** desenha frutas, partículas, trilhas e o rastreamento das mãos.
+
+O rastreamento usa um modelo de visão computacional executado no navegador com suporte a **WebAssembly**. Não há processamento de vídeo em um servidor do projeto.
+
+### Decisões técnicas
+
+- **Separação de responsabilidades:** a UI React fica isolada da lógica de física e colisão.
+- **Geometria de trajetórias:** a detecção de acerto considera o caminho percorrido pelo dedo, não apenas sua posição final.
+- **Modelo local:** os arquivos de IA e WASM são preparados durante a instalação e servidos com o aplicativo.
+- **Persistência no navegador:** preferências e estatísticas são guardadas em `localStorage`, sem login.
+- **Testabilidade:** os cálculos de colisão e a geração de sequências do desafio diário têm testes automatizados.
+
+## Rodando localmente
+
+**Pré-requisitos:** Node.js **22+**, npm e um navegador moderno (Chrome ou Edge recomendados).
 
 ```bash
+git clone https://github.com/Mart1nsHiago/katana-motion.git
+cd katana-motion
 npm install
 npm run dev
 ```
 
-Na instalação, o script `postinstall` copia o runtime WebAssembly da dependência
-`@mediapipe/tasks-vision` e baixa o modelo oficial de reconhecimento de mãos
-para `public/`. Assim, os arquivos de IA (~30 MB) não precisam ficar no Git.
-Para preparar os arquivos novamente, execute `node scripts/prepare-assets.mjs`.
+Abra o endereço informado pelo Vite. Escolha **Webcam** para jogar com as mãos e autorize o acesso à câmera; se preferir, escolha **Mouse**.
 
-Abra o endereço local exibido pelo Vite. No navegador, clique em **Começar a jogar** e autorize a webcam, ou selecione o modo mouse.
+> **Importante:** navegadores exigem **HTTPS ou localhost** para acessar a webcam. Na primeira instalação, o script `postinstall` baixa o modelo oficial do MediaPipe e copia o runtime WASM para `public/`. Por isso, é necessária conexão com a internet na instalação.
 
-O acesso à webcam exige **HTTPS ou localhost**. A câmera não é enviada a servidor: o reconhecimento é feito localmente pelo MediaPipe. Os recordes e as estatísticas ficam em `localStorage` no próprio navegador.
-
-## Principais recursos
-
-- Reconhecimento de até duas mãos via MediaPipe e modelo de IA local (`public/models/hand_landmarker.task`).
-- Rastreamento da ponta do indicador com compensação de espelhamento e proporção de vídeo.
-- Modo mouse (clique + arraste) para jogar sem câmera.
-- Física de frutas, colisão de trajetórias, partículas e animações de corte.
-- Bombas, corações para recuperar vidas, pontuação, combos e cinco vidas.
-- Partida livre e desafio diário com sequência determinística.
-- Ranking local, histórico de partidas e estatísticas de precisão.
-- Ajustes para exibir ou ocultar vídeo, rastreamento, efeitos e áudio.
-- Interface responsiva para desktop e dispositivos móveis.
-
-## Comandos
+Caso precise reconstruir os arquivos locais de IA:
 
 ```bash
-npm run dev        # Desenvolvimento
-npm run typecheck  # Verificação de tipos
-npm test           # Testes de colisão e aleatoriedade
-npm run build      # Versão otimizada para produção (dist/)
-npm run preview    # Pré-visualização da build
+node scripts/prepare-assets.mjs
 ```
 
-## Estrutura
+### Comandos disponíveis
+
+| Comando | Finalidade |
+| --- | --- |
+| `npm run dev` | Executar o ambiente de desenvolvimento |
+| `npm run typecheck` | Verificar os tipos TypeScript |
+| `npm test` | Executar testes de colisão e geração determinística |
+| `npm run build` | Compilar para produção em `dist/` |
+| `npm run preview` | Pré-visualizar a versão de produção |
+
+## Estrutura do repositório
 
 ```text
 src/
-  App.tsx                  Telas, controles e estatísticas
-  components/GameArena.tsx Webcam, IA, canvas e eventos de mouse
-  game/engine.ts           Física, frutas, colisões e efeitos
-  game/math.ts             Geometria e números aleatórios
-  game/types.ts            Tipos e configuração
-  styles.css               Interface e responsividade
+├── App.tsx                    # Telas, controles e estatísticas
+├── components/
+│   └── GameArena.tsx          # Webcam, rastreamento e Canvas
+├── game/
+│   ├── engine.ts              # Motor do jogo e colisões
+│   ├── math.ts                # Geometria e funções aleatórias
+│   └── types.ts               # Tipos e configurações
+├── main.tsx                   # Entrada da aplicação
+└── styles.css                 # Layout e responsividade
 public/
-  models/hand_landmarker.task  Modelo do MediaPipe (gerado na instalação)
-  wasm/                        Runtime WebAssembly (copiado na instalação)
+└── favicon.svg                # Identidade visual
 scripts/
-  prepare-assets.mjs          Prepara os arquivos de IA locais
+└── prepare-assets.mjs         # Preparação de modelo e WASM
+test/
+└── game-math.test.mjs         # Testes automatizados
 ```
 
-## Privacidade e dependências
+Os arquivos gerados em `public/models/` e `public/wasm/` não são versionados porque somam aproximadamente 30 MB.
 
-O jogo não possui backend, autenticação nem armazenamento de vídeo. O navegador obtém os quadros da câmera e o MediaPipe os processa localmente. Após `npm install`, o modelo e o runtime WASM ficam em `public/`, portanto não dependem de CDNs durante a partida. A instalação precisa de internet para baixar o modelo oficial.
+## Privacidade
 
-O aplicativo utiliza as fontes Barlow Condensed e DM Sans do Google Fonts; caso indisponíveis, utiliza fontes locais equivalentes.
+- O acesso à câmera depende de autorização explícita no navegador.
+- O vídeo é processado **localmente**; o projeto não envia nem armazena imagens da webcam.
+- Não há backend ou cadastro de usuários.
+- Recordes, histórico e preferências ficam apenas no armazenamento do navegador.
+- As fontes de interface podem ser carregadas do Google Fonts, com fontes alternativas locais caso o serviço esteja indisponível.
 
-## Créditos
+## Autoria e créditos
 
-Projeto independente de **Hiago Martins**, inspirado no gênero de jogos de corte de frutas controlados por movimentos.
+**Hiago Martins** — responsável pelo projeto Katana Motion, sua apresentação e manutenção.
+
+- GitHub: [@Mart1nsHiago](https://github.com/Mart1nsHiago)
+- Portfólio: [mart1nshiago.github.io](https://mart1nshiago.github.io/)
+
+Projeto independente inspirado no gênero de jogos de corte de frutas, desenvolvido com tecnologias web e bibliotecas de terceiros. As dependências utilizadas mantêm suas próprias licenças.
+
+## Direitos autorais e reutilização
+
+**© 2026 Hiago Martins. Todos os direitos reservados sobre os componentes originais.**
+
+O código está público para **consulta e avaliação técnica**, mas **não foi disponibilizado sob uma licença de código aberto**. A publicação não concede autorização geral para redistribuir, comercializar ou incorporar o código original em outros projetos. Continuam válidos os direitos previstos na legislação e os recursos de visualização e *fork* permitidos pelos termos do GitHub.
+
+Leia as condições completas em **[COPYRIGHT.md](COPYRIGHT.md)**.
